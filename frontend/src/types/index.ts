@@ -154,7 +154,9 @@ export interface UIMessage {
 export interface AppState {
   // Session
   sessionId: string | null;
-  setSessionId: (id: string) => void;
+  setSessionId: (id: string | null) => void;
+  sessionCache: Record<string, any>;
+  switchSession: (newSessionId: string | null, newFiles?: FileProfile[]) => void;
 
   // Files
   uploadedFiles: FileProfile[];
@@ -178,6 +180,8 @@ export interface AppState {
   setAnomalies: (data: AnomalyResponse) => void;
   quality: DataQualityResponse | null;
   setQuality: (data: DataQualityResponse) => void;
+  dashboard: ChartSpec[] | null;
+  setDashboard: (data: ChartSpec[]) => void;
 
   // Loading
   isChatLoading: boolean;

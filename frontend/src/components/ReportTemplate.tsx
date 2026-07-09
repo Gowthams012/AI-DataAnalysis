@@ -2,9 +2,10 @@ import React, { forwardRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import ChartRenderer from './ChartRenderer';
 
 export const ReportTemplate = forwardRef<HTMLDivElement, {}>((_, ref) => {
-  const { sessionId, insights, anomalies, quality } = useAppStore();
+  const { sessionId, insights, anomalies, quality, dashboard } = useAppStore();
 
   if (!sessionId) return null;
 
@@ -101,6 +102,23 @@ export const ReportTemplate = forwardRef<HTMLDivElement, {}>((_, ref) => {
                 </div>
                 <div className="pdf-anomaly-reason" style={{ fontSize: 13, color: '#333' }}>
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{anom.explanation}</ReactMarkdown>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* 4. Dashboard */}
+      {dashboard && dashboard.length > 0 && (
+        <div className="pdf-section" style={{ marginBottom: 40, pageBreakInside: 'avoid' }}>
+          <h2 className="pdf-section-title" style={{ fontSize: 20, borderBottom: '1px solid #ccc', paddingBottom: 8, marginBottom: 16 }}>4. Dashboard Visualizations</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {dashboard.map((chart, i) => (
+              <div key={i} style={{ pageBreakInside: 'avoid', border: '1px solid #eee', padding: 16, borderRadius: 8 }}>
+                <h3 style={{ fontSize: 16, marginBottom: 12 }}>{chart.title}</h3>
+                {/* For PDF export, we must give a fixed layout box so ResponsiveContainer can resolve its size */}
+                <div style={{ width: '700px', height: '400px', margin: '0 auto' }}>
+                  <ChartRenderer spec={chart} />
                 </div>
               </div>
             ))}

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     openrouter_model: str = "openrouter/anthropic/claude-3-haiku"
     
     groq_api_key: str = ""
-    groq_model: str = "groq/llama-3.1-70b-versatile"
+    groq_model: str = "groq/llama-3.3-70b-versatile"
     
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_key: str = ""
     supabase_jwt_secret: str = ""
+    
+    # ── Redis Cache ──────────────────────────────────────────────
+    redis_url: str = "redis://localhost:6379"
 
     # ── Server ───────────────────────────────────────────────────
     cors_origins: List[str] = [

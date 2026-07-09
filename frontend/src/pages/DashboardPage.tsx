@@ -6,19 +6,26 @@ import { ChartSpec } from '../types';
 import { extractErrorMessage } from '../hooks/useToast';
 
 export default function DashboardPage() {
-  const { sessionId } = useAppStore();
+  const { sessionId, uploadedFiles } = useAppStore();
   const [charts, setCharts] = useState<ChartSpec[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<string>('');
 
-  const fetchDashboard = async () => {
+  const fetchDashboard = async (fileToUse?: string) => {
     if (!sessionId) return;
+    const file = fileToUse || selectedFile;
+    if (uploadedFiles.length > 1 && !file) {
+      setError('Please select a dataset to analyze.');
+      return;
+    }
     
     setIsLoading(true);
     setError(null);
     try {
-      const res = await generateDashboard(sessionId);
+      const res = await generateDashboard(sessionId, file);
       setCharts(res.charts);
+      useAppStore.getState().setDashboard(res.charts);
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
@@ -27,28 +34,50 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (sessionId && charts.length === 0 && !isLoading && !error) {
-      fetchDashboard();
+    if (sessionId && uploadedFiles.length > 0) {
+      if (uploadedFiles.length === 1) {
+        setSelectedFile(uploadedFiles[0].filename);
+        if (charts.length === 0 && !isLoading && !error) {
+          fetchDashboard(uploadedFiles[0].filename);
+        }
+      } else if (!selectedFile) {
+        // Just set the first one as default selected, but don't auto-fetch if we want them to choose
+        setSelectedFile(uploadedFiles[0].filename);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+  }, [sessionId, uploadedFiles]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>Automated Dashboard</h2>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
             AI-generated visualizations based on your dataset patterns.
           </p>
         </div>
-        <button 
-          className="btn btn-primary" 
-          onClick={fetchDashboard} 
-          disabled={isLoading || !sessionId}
-        >
-          {isLoading ? 'Generating...' : 'Regenerate'}
-        </button>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          {uploadedFiles.length > 1 && (
+            <select 
+              value={selectedFile} 
+              onChange={(e) => setSelectedFile(e.target.value)}
+              className="chat-input"
+              style={{ width: 'auto', padding: '6px 12px', minHeight: 'unset', height: 36, fontSize: 13 }}
+            >
+              {uploadedFiles.map(f => (
+                <option key={f.filename} value={f.filename}>{f.filename}</option>
+              ))}
+            </select>
+          )}
+          <button 
+            className="btn btn-primary" 
+            onClick={() => fetchDashboard()} 
+            disabled={isLoading || !sessionId || (uploadedFiles.length > 1 && !selectedFile)}
+          >
+            {isLoading ? 'Generating...' : charts.length > 0 ? 'Regenerate' : 'Generate'}
+          </button>
+        </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>

@@ -9,8 +9,10 @@ import structlog
 from typing import Optional
 import litellm
 import json_repair
+import hashlib
 
 from app.core.config import settings
+from app.core.cache import redis_cache
 
 log = structlog.get_logger(__name__)
 
@@ -52,6 +54,18 @@ class LLMClient:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
+        # Generate cache key by ignoring dynamic conversation history
+        import re
+        hashable_prompt = re.sub(r'## Conversation History\n.*?\n## Current Question', '## Current Question', prompt, flags=re.DOTALL)
+        hash_input = (system_prompt or "") + hashable_prompt
+        cache_key = f"llm_cache:{hashlib.sha256(hash_input.encode('utf-8')).hexdigest()}"
+
+        # Try to fetch from cache first
+        cached_response = await redis_cache.get(cache_key)
+        if cached_response:
+            log.info("llm.generate.cache_hit", key=cache_key)
+            return cached_response
+
         log.info("llm.generate", model=self.primary_model, prompt_len=len(prompt))
         
         try:
@@ -66,6 +80,9 @@ class LLMClient:
             if not content:
                 raise ValueError("LLM returned an empty response.")
                 
+            # Store in cache
+            await redis_cache.set(cache_key, content)
+            
             log.debug("llm.generate.ok", chars=len(content))
             return content
         except Exception as e:

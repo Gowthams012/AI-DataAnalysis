@@ -11,8 +11,12 @@ export default function DatasetsPage() {
     try {
       await apiRemoveFile(sessionId, filename);
       removeFile(filename);
-    } catch (err) {
-      showError(err, 'Remove File Failed');
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        removeFile(filename); // It's already deleted on the server, remove from UI
+      } else {
+        showError(err, 'Remove File Failed');
+      }
     }
   };
 

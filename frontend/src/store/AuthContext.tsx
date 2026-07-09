@@ -29,8 +29,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const recoverSession = async () => {
       try {
         const store = useAppStore.getState();
-        // If we already have a session in local storage, don't overwrite it
-        if (store.sessionId) return;
+        // If we have a cached session, verify it's valid for this user
+        if (store.sessionId) {
+          try {
+            await getSessionDetails(store.sessionId);
+            return; // Session is valid and loaded
+          } catch (err) {
+            console.warn("Cached session invalid or belongs to another user. Clearing.");
+            store.setSessionId(null);
+            store.setUploadedFiles([]);
+            store.clearMessages();
+          }
+        }
         
         const sessions = await getSessions();
         if (sessions && sessions.length > 0) {
@@ -38,10 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const latest = sessions.sort((a, b) => new Date(b.last_active).getTime() - new Date(a.last_active).getTime())[0];
           const details = await getSessionDetails(latest.session_id);
           
-          store.setSessionId(details.session_id);
-          if (details.files) {
-            store.setUploadedFiles(details.files);
-          }
+          store.switchSession(details.session_id, details.files);
         }
       } catch (err) {
         console.error("Failed to recover session:", err);
@@ -72,6 +79,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = async () => {
+    const store = useAppStore.getState();
+    store.setSessionId(null);
+    store.setUploadedFiles([]);
+    store.clearMessages();
     await supabase.auth.signOut();
   };
 

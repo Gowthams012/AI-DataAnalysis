@@ -7,7 +7,8 @@ import { useAuth } from '../store/AuthContext';
 import { LogOut, User } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import { ReportTemplate } from './ReportTemplate';
-import { useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
+import { getSessions, getSessionDetails } from '../services/api';
 
 const NAV_LINKS = [
   { path: '/', label: 'Home' },
@@ -31,10 +32,20 @@ export default function Sidebar() {
     setInsights,
     setAnomalies,
     setQuality,
+    switchSession,
   } = useAppStore();
   const { error: showError, success: showSuccess } = useToast();
   const { user, signOut } = useAuth();
   const reportRef = useRef<HTMLDivElement>(null);
+  const [sessions, setSessions] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      getSessions()
+        .then(data => setSessions(data.slice(0, 10))) // show top 10
+        .catch(console.error);
+    }
+  }, [user, sessionId]);
 
   const { open, getInputProps } = useDropzone({
     onDrop: async (accepted) => {
@@ -58,8 +69,12 @@ export default function Sidebar() {
     try {
       await apiRemoveFile(sessionId, filename);
       removeFile(filename);
-    } catch (err) {
-      showError(err, 'Remove File Failed');
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        removeFile(filename); // It's already deleted on the server, remove from UI
+      } else {
+        showError(err, 'Remove File Failed');
+      }
     }
   };
 
@@ -86,14 +101,7 @@ export default function Sidebar() {
   };
 
   const handleNewSession = async () => {
-    if (sessionId) {
-      try { await deleteSession(sessionId); } catch { /* ignore */ }
-    }
-    setSessionId('');
-    clearMessages();
-    setInsights(null!);
-    setAnomalies(null!);
-    setQuality(null!);
+    switchSession(null);
     window.location.href = '/';
   };
 
@@ -136,10 +144,17 @@ export default function Sidebar() {
           </div>
         ) : (
           uploadedFiles.slice(0, 3).map((f) => (
-            <div key={f.filename} className="sidebar-file-item">
-              <div className="sidebar-file-info">
-                <div className="sidebar-file-name" title={f.filename}>{f.filename}</div>
+            <div key={f.filename} className="sidebar-file-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="sidebar-file-info" style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="sidebar-file-name" title={f.filename} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{f.filename}</div>
               </div>
+              <button 
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemoveFile(f.filename); }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--accent-err)', cursor: 'pointer', fontSize: 16, padding: '0 4px', opacity: 0.7 }}
+                title="Delete file"
+              >
+                ×
+              </button>
             </div>
           ))
         )}
@@ -158,9 +173,49 @@ export default function Sidebar() {
         {/* Session ID */}
         {sessionId && (
           <div style={{ marginTop: 16 }}>
-            <div className="sidebar-section-title">Session</div>
+            <div className="sidebar-section-title">Current Session</div>
             <div style={{ padding: '0 10px', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--text-muted)', wordBreak: 'break-all' }}>
               {sessionId}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Sessions */}
+        {sessions.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <div className="sidebar-section-title">Recent Sessions</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '0 10px' }}>
+              {sessions.map((s, index) => (
+                <div 
+                  key={s.session_id} 
+                  style={{ 
+                    fontSize: 11, 
+                    padding: '6px 8px', 
+                    borderRadius: 4, 
+                    cursor: 'pointer',
+                    background: s.session_id === sessionId ? 'var(--bg-input)' : 'transparent',
+                    color: s.session_id === sessionId ? 'var(--text-primary)' : 'var(--text-muted)',
+                  }}
+                  onClick={async () => {
+                    if (s.session_id === sessionId) return;
+                    try {
+                      const details = await getSessionDetails(s.session_id);
+                      switchSession(s.session_id, details.files);
+                      showSuccess('Switched to previous session');
+                    } catch (err) {
+                      showError(err, 'Failed to switch session');
+                    }
+                  }}
+                  title={s.session_id}
+                >
+                  <div style={{ fontWeight: s.session_id === sessionId ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    Session {sessions.length - index}
+                  </div>
+                  <div style={{ fontSize: 9, opacity: 0.7, marginTop: 2 }}>
+                    {new Date(s.last_active).toLocaleString()}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

@@ -207,7 +207,7 @@ async def generate_chart(session: Session, query: str, filename: Optional[str] =
     from app.utils.helpers import result_to_chart_data, safe_exec, serialize_result
 
     df, fname = _resolve_df(session, filename)
-    df_vars = _build_df_namespace(session)
+    df_vars = _build_df_namespace(session, fname)
 
     schema_summary = session.files[fname].schema_summary
 
@@ -218,6 +218,9 @@ Dataset schema:
 {schema_summary}
 
 Available DataFrame variable: df (and {", ".join(df_vars.keys())})
+
+IMPORTANT: You MUST write python code that aggregates, filters, or transforms `df` to produce the visualization data. DO NOT generate mock, synthetic, or hardcoded data under any circumstances.
+The dataframe `df` is ALREADY loaded in memory. DO NOT use pd.read_csv() or try to read files from disk. Just use the `df` variable directly.
 
 Generate a chart specification. Respond ONLY with valid JSON:
 {{
@@ -275,7 +278,7 @@ async def generate_dashboard(session: Session, filename: Optional[str] = None) -
     from app.utils.helpers import result_to_chart_data, safe_exec, serialize_result
 
     df, fname = _resolve_df(session, filename)
-    df_vars = _build_df_namespace(session)
+    df_vars = _build_df_namespace(session, fname)
     schema_summary = session.files[fname].schema_summary
     stats_summary = _build_stats_summary(df, fname)
 
@@ -289,6 +292,9 @@ Dataset statistics:
 {stats_summary}
 
 Available DataFrame variable: df (and {", ".join(df_vars.keys())})
+
+IMPORTANT: You MUST write python code that aggregates, filters, or transforms `df` to produce the visualization data for `result`. DO NOT generate mock, synthetic, or hardcoded data under any circumstances.
+The dataframe `df` is ALREADY loaded in memory. DO NOT use pd.read_csv() or try to read files from disk. Just use the `df` variable directly.
 
 Generate 5-6 diverse chart specifications (e.g. some bars, lines, pies, scatters) that tell a story about this data.
 Respond ONLY with valid JSON matching this exact structure:
@@ -349,6 +355,59 @@ Respond ONLY with valid JSON matching this exact structure:
                     valueKey=c.get("valueKey"),
                 )
             )
+
+    if not valid_charts:
+        log.warning("dashboard.llm_failed", filename=fname, msg="LLM returned no valid charts, using fallback.")
+        numeric_cols = df.select_dtypes(include="number").columns.tolist()
+        cat_cols = df.select_dtypes(include=["object", "category", "string"]).columns.tolist()
+
+        if numeric_cols:
+            col = numeric_cols[0]
+            # Simple time series if there's a date-like column, otherwise distribution
+            date_cols = [c for c in df.columns if 'date' in c.lower() or 'time' in c.lower()]
+            if date_cols:
+                date_col = date_cols[0]
+                grouped = df.groupby(date_col)[col].sum().reset_index().tail(30)
+                valid_charts.append(ChartSpec(
+                    type="line",
+                    title=f"{col} over Time",
+                    data=grouped.where(pd.notna(grouped), None).to_dict(orient="records"),
+                    xKey=date_col,
+                    yKeys=[YKey(key=col, color=_CHART_COLORS[0], name=col)]
+                ))
+            else:
+                counts = df[col].value_counts(bins=10).sort_index()
+                data = [{"value": f"{v.left:.1f}-{v.right:.1f}", "count": int(c)} for v, c in counts.items()]
+                valid_charts.append(ChartSpec(
+                    type="bar",
+                    title=f"Distribution of {col}",
+                    data=data,
+                    xKey="value",
+                    yKeys=[YKey(key="count", color=_CHART_COLORS[1], name="Count")],
+                    xLabel=col,
+                    yLabel="Count"
+                ))
+
+        if cat_cols:
+            col = cat_cols[0]
+            counts = df[col].value_counts().head(10)
+            data = [{"category": str(k), "count": int(v)} for k, v in counts.items()]
+            valid_charts.append(ChartSpec(
+                type="pie",
+                title=f"Top Categories in {col}",
+                data=data,
+                nameKey="category",
+                valueKey="count"
+            ))
+            
+        if not valid_charts:
+            valid_charts.append(ChartSpec(
+                type="bar",
+                title="Dataset Overview",
+                data=[{"metric": "Total Rows", "value": len(df)}, {"metric": "Total Columns", "value": len(df.columns)}],
+                xKey="metric",
+                yKeys=[YKey(key="value", color=_CHART_COLORS[2], name="Value")],
+            ))
 
     return valid_charts
 

@@ -196,40 +196,6 @@ function MessageBubble({ message, onFollowUp }: { message: UIMessage; onFollowUp
           </div>
         )}
 
-        {/* Code block */}
-        {message.code?.snippet && (
-          <div className="code-block-wrapper">
-            <div className="code-block-header">
-              <span className="code-block-lang">{message.code.language || 'code'}</span>
-              <button className="code-block-copy" onClick={() => copyCode(message.code!.snippet)}>
-                {copied ? '✓ Copied' : 'Copy'}
-              </button>
-            </div>
-            <SyntaxHighlighter
-              language={message.code.language === 'sql' ? 'sql' : 'python'}
-              style={vscDarkPlus}
-              className="code-block-body"
-              customStyle={{ margin: 0, borderRadius: 0, fontSize: 13 }}
-            >
-              {message.code.snippet}
-            </SyntaxHighlighter>
-          </div>
-        )}
-
-        {/* SQL block */}
-        {message.sql && (
-          <div>
-            <div className="sql-block-label">SQL</div>
-            <div className="sql-block">{message.sql}</div>
-          </div>
-        )}
-
-        {/* Execution error */}
-        {message.execution_error && (
-          <div style={{ padding: '8px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, fontSize: 12, color: '#ef4444' }}>
-            Code execution error: {message.execution_error}
-          </div>
-        )}
 
         {/* Chart */}
         {message.chart_spec && message.chart_spec.data?.length > 0 && (

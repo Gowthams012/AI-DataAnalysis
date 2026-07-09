@@ -7,6 +7,7 @@ import type {
   DataQualityResponse,
   FileProfile,
   InsightsResponse,
+  ChartSpec,
   PanelView,
   UIMessage,
 } from '../types';
@@ -17,6 +18,36 @@ export const useAppStore = create<AppState>()(
   // ── Session ────────────────────────────────────────────────
   sessionId: null,
   setSessionId: (id) => set({ sessionId: id }),
+  sessionCache: {},
+  switchSession: (newSessionId, newFiles) => set((state) => {
+    const currentId = state.sessionId;
+    const newCache = { ...state.sessionCache };
+    
+    // Save current session state
+    if (currentId) {
+      newCache[currentId] = {
+        messages: state.messages,
+        insights: state.insights,
+        anomalies: state.anomalies,
+        quality: state.quality,
+        dashboard: state.dashboard,
+      };
+    }
+    
+    // Load new session state if it exists
+    const cachedData = newSessionId ? newCache[newSessionId] : null;
+    
+    return {
+      sessionId: newSessionId,
+      sessionCache: newCache,
+      uploadedFiles: newFiles || [],
+      messages: cachedData?.messages || [],
+      insights: cachedData?.insights || null,
+      anomalies: cachedData?.anomalies || null,
+      quality: cachedData?.quality || null,
+      dashboard: cachedData?.dashboard || null,
+    };
+  }),
 
   // ── Files ──────────────────────────────────────────────────
   uploadedFiles: [],
@@ -57,6 +88,8 @@ export const useAppStore = create<AppState>()(
   setAnomalies: (data) => set({ anomalies: data }),
   quality: null,
   setQuality: (data) => set({ quality: data }),
+  dashboard: null,
+  setDashboard: (data) => set({ dashboard: data }),
 
   // ── Loading ────────────────────────────────────────────────
   isChatLoading: false,

@@ -61,9 +61,12 @@ Use this exact schema:
 ```
 
 ## Rules
-- If no chart is needed, set `chart_spec` to `null`.
+- If the requested answer is just a single number, text, or a simple summary, you MUST set `chart_spec` to `null`. ONLY generate a `chart_spec` if the result contains multiple data points suitable for a chart.
 - If no code is needed, set `code.snippet` to `""`.
 - When generating Python code, ALWAYS assign the final answer/data to a variable named `result`.
+- The `code.snippet` field MUST ALWAYS be valid Python pandas code. NEVER put SQL in `code.snippet`. If the user asks for SQL, put the SQL in the `sql` field, but you MUST STILL provide the equivalent Python pandas code in `code.snippet` so we can execute it to get the results.
+- The dataframes are ALREADY loaded in memory. DO NOT use pd.read_csv() or try to read files from disk. Just use the `df` variable directly.
+- You can ONLY use pandas (pd), numpy (np), math, and scipy.stats (stats). DO NOT use scikit-learn or any other library. DO NOT generate ANY import statements.
 - For pie charts, use `nameKey` and `valueKey` instead of `xKey`/`yKeys`.
 - Chart `data` should always be `"USE_CODE_RESULT"` — the backend will run the code and substitute real data.
 - Prefer pandas code over SQL when possible. Include SQL as a bonus when relevant.
@@ -130,6 +133,13 @@ async def chat(session_id: str, message: str) -> ChatResponse:
         exec_result, exec_output, exec_error = safe_exec(code_block.snippet, df_vars)
         if exec_result is not None:
             exec_result = serialize_result(exec_result)
+            # If there was no printed output, show the result variable so it appears in the Queries page
+            if not exec_output:
+                try:
+                    exec_output = json.dumps(exec_result, indent=2, default=str)
+                except Exception:
+                    exec_output = str(exec_result)
+                    
         log.info(
             "chat.code_exec - session_id=%s, has_result=%s, error=%s",
             session_id,
@@ -198,17 +208,29 @@ def _build_data_context(session: Session) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-def _build_df_namespace(session: Session) -> Dict[str, pd.DataFrame]:
+def _build_df_namespace(session: Session, selected_filename: Optional[str] = None) -> Dict[str, pd.DataFrame]:
     """Create the variable namespace for code execution."""
     ns: Dict[str, pd.DataFrame] = {}
-    records = list(session.files.values())
-    for i, rec in enumerate(records):
-        # First file is always "df"; subsequent files are df_1, df_2, …
-        var_name = "df" if i == 0 else f"df_{i}"
-        # Also add sanitized filename as variable name
+    
+    # Prioritize selected_filename to be mapped to 'df'
+    primary_filename = selected_filename
+    if not primary_filename and session.files:
+        primary_filename = next(iter(session.files.keys()))
+        
+    for i, (fname, rec) in enumerate(session.files.items()):
+        # Add sanitized filename as variable name
         safe_name = rec.filename.replace(".csv", "").replace("-", "_").replace(" ", "_").lower()
-        ns[var_name] = rec.df
         ns[safe_name] = rec.df
+        
+        if fname == primary_filename:
+            ns["df"] = rec.df
+        else:
+            var_name = f"df_{i+1}"
+            if "df" not in ns and var_name == "df_1":
+                # Just in case, though handled above
+                var_name = f"df_{i+2}"
+            ns[var_name] = rec.df
+            
     return ns
 
 

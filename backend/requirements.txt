@@ -37,3 +37,10 @@ PyJWT==2.8.0
 
 # JSON Parsing
 json-repair==0.61.2
+
+# Caching
+redis==5.0.7
+
+# Database
+SQLAlchemy==2.0.51
+psycopg2-binary==2.9.12

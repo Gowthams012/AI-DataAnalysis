@@ -129,7 +129,7 @@ function QueryCard({ msg, purpose }: { msg: any; purpose: string }) {
         </div>
       </div>
 
-      {msg.code?.snippet && (
+      {msg.code?.snippet && msg.code.language !== 'sql' && (
         <div style={{ marginBottom: msg.sql ? 16 : 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--accent-1)' }}>

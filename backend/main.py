@@ -19,7 +19,12 @@ log = structlog.get_logger(__name__)
 async def lifespan(app: FastAPI):
     log.info("AI Data Analyst starting up", version="1.0.0", llm=settings.llm_provider)
     try:
-        # Create all tables (will crash if pgvector is not installed on the DB, but expected for Phase 1)
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            conn.commit()
+        
+        # Create all tables
         Base.metadata.create_all(bind=engine)
         log.info("Database tables initialized.")
     except Exception as e:

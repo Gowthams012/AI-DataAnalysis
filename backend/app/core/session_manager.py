@@ -42,27 +42,38 @@ def get_session(db: Session, session_id: str, user: Optional[User] = None) -> Op
     """Retrieve a session from the DB and map it to the legacy format."""
     query = db.query(DBSession).filter(DBSession.session_id == session_id)
     if user:
-        query = query.filter(DBSession.user_id == user.id)
+        from sqlalchemy import or_
+        query = query.filter(or_(DBSession.user_id == user.id, DBSession.user_id == None))
+        
     db_session = query.first()
     if not db_session:
         return None
+        
+    # Claim anonymous session for the logged-in user
+    if user and db_session.user_id is None:
+        db_session.user_id = user.id
         
     db_session.last_active = datetime.datetime.utcnow()
     db.commit()
     
     files = {}
     for f in db_session.files:
-        # Download the file content from storage (lazy loading df if needed, but doing it here for now to avoid breaking existing code)
-        content = download_file(f.storage_path)
-        import io
-        df = pd.read_csv(io.BytesIO(content), low_memory=False)
-        files[f.filename] = LegacyFileRecord(
-            filename=f.filename,
-            df=df,
-            schema_summary=f.schema_summary,
-            profile=f.profile,
-            uploaded_at=f.uploaded_at
-        )
+        try:
+            # Download the file content from storage (lazy loading df if needed, but doing it here for now to avoid breaking existing code)
+            content = download_file(f.storage_path)
+            import io
+            df = pd.read_csv(io.BytesIO(content), low_memory=False)
+            files[f.filename] = LegacyFileRecord(
+                filename=f.filename,
+                df=df,
+                schema_summary=f.schema_summary,
+                profile=f.profile,
+                uploaded_at=f.uploaded_at
+            )
+        except Exception as e:
+            log.warning("session.file_download_failed", file=f.filename, error=str(e))
+            # Skip this file if it cannot be downloaded so the session still loads
+            pass
         
     conversation = [
         LegacyConversationMessage(
