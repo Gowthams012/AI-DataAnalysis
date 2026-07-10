@@ -1,4 +1,4 @@
-# AI-DataAnalysis# AI Data Analyst 🤖📊
+# AI-DataAnalysis 🤖📊
 
 An AI-powered data analysis platform. Upload CSV files and interact with your data using natural language — get insights, visualizations, anomaly detection, and SQL/Pandas code generation powered by an LLM.
 
