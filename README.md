@@ -1,4 +1,4 @@
-# AI Data Analyst 🤖📊
+# AI-DataAnalysis# AI Data Analyst 🤖📊
 
 An AI-powered data analysis platform. Upload CSV files and interact with your data using natural language — get insights, visualizations, anomaly detection, and SQL/Pandas code generation powered by an LLM.
 
@@ -173,3 +173,50 @@ npm run dev
 ## Sample Datasets
 
 You can use the datasets located in the `Sample Datasets/` directory (such as `Hb_PPG_7-17gdl.csv`) to immediately test the platform's analytical capabilities, charts, and anomaly detection. 
+
+
+## Outputs 
+
+1.Login/signup page :
+
+<img width="975" height="499" alt="image" src="https://github.com/user-attachments/assets/bb5b6eef-17d3-4e36-a959-ec436367881a" />
+
+2.Home page : 
+
+<img width="975" height="499" alt="image" src="https://github.com/user-attachments/assets/451e6afd-c8ab-4110-b603-acb32da83530" />
+
+3. upload CSV file :
+
+<img width="975" height="551" alt="image" src="https://github.com/user-attachments/assets/9b70f8ca-8b5e-4e9b-becb-882611d4b8fc" />
+
+4. Analyzing Dateset : 
+
+<img width="975" height="498" alt="image" src="https://github.com/user-attachments/assets/1d8d4154-e476-4723-a353-e9d1366fd022" />
+
+5.Analytics and Insights
+
+<img width="975" height="499" alt="image" src="https://github.com/user-attachments/assets/3b6a6842-851a-4e68-96bc-44aa1b0b1835" /> 
+
+6. Dashboard : 
+
+<img width="975" height="497" alt="image" src="https://github.com/user-attachments/assets/05552695-0b19-4d57-a577-06b645a1c210" />
+
+7. ChatBot : 
+
+<img width="975" height="499" alt="image" src="https://github.com/user-attachments/assets/cbdb3383-56ac-4cf2-9fc5-78788efcc891" /> 
+
+8. Queries Generating page :
+
+<img width="975" height="504" alt="image" src="https://github.com/user-attachments/assets/8dac28cf-4fbe-4331-92ed-39d56efb378b" />
+
+9. Anomaly Detection Page :
+
+<img width="975" height="499" alt="image" src="https://github.com/user-attachments/assets/a5576f67-63b5-4ffc-9200-5918155e3b62" />
+
+10.Data Quality :
+
+<img width="975" height="497" alt="image" src="https://github.com/user-attachments/assets/55159d4d-2634-4be4-9863-2c89f9e4261c" />
+
+## Demo video of  project 
+
+
