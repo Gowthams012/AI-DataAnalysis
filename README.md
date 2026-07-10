@@ -23,45 +23,6 @@ An AI-powered data analysis platform. Upload CSV files and interact with your da
 
 ---
 
-## Architecture Diagram
-
-The application leverages a modern web stack backed by Supabase for persistent data storage and Google Gemini for Large Language Model processing.
-
-```mermaid
-graph TD
-    User([User])
-    
-    subgraph Frontend [Frontend (React + Vite + Zustand)]
-        UI[Web Interface]
-        State[Zustand State Management]
-    end
-
-    subgraph Backend [Backend (FastAPI + Python 3.11)]
-        API[API Endpoints]
-        LLM_Service[Chat & Code Service]
-        Data_Service[Data Quality & Anomaly Service]
-        Storage_Service[Session & File Storage]
-    end
-
-    subgraph External [External Services]
-        LLM[Google Gemini / OpenAI LLM]
-        DB[(Supabase PostgreSQL)]
-    end
-
-    User -->|Uploads CSV / Asks Qs| UI
-    UI <--> State
-    State <-->|HTTP Requests| API
-    
-    API --> LLM_Service
-    API --> Data_Service
-    API --> Storage_Service
-    
-    LLM_Service <-->|Prompts & Context| LLM
-    Storage_Service <-->|CRUD Sessions & Files| DB
-    Data_Service -->|Calculations| Storage_Service
-```
-
----
 
 ## Architecture Diagram (High-Level)
 
