@@ -12,7 +12,7 @@ An AI-powered data analysis platform. Upload CSV files and interact with your da
 | **Natural Language Q&A** | Ask questions in plain English, get answers with reasoning |
 | **Code Generation** | Pandas + SQL generated automatically |
 | **Code Execution** | Code runs in a safe sandbox — real computed results |
-| **Charts** | Bar, Line, Area, Pie, Scatter — rendered with Recharts |
+| **Charts** | Bar, Line, Area, Pie, Scatter — rendered dynamically with Plotly |
 | **Anomaly Detection** | Isolation Forest + LLM explanation per flagged row |
 | **AI Insights** | 5-8 business insights with severity & category |
 | **Data Quality** | Missing values, duplicates, outliers, score 0–100 |
@@ -23,12 +23,111 @@ An AI-powered data analysis platform. Upload CSV files and interact with your da
 
 ---
 
-## Quick Start
+## Architecture Diagram
 
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- Google Gemini API key ([get one free](https://aistudio.google.com/app/apikey))
+The application leverages a modern web stack backed by Supabase for persistent data storage and Google Gemini for Large Language Model processing.
+
+```mermaid
+graph TD
+    User([User])
+    
+    subgraph Frontend [Frontend (React + Vite + Zustand)]
+        UI[Web Interface]
+        State[Zustand State Management]
+    end
+
+    subgraph Backend [Backend (FastAPI + Python 3.11)]
+        API[API Endpoints]
+        LLM_Service[Chat & Code Service]
+        Data_Service[Data Quality & Anomaly Service]
+        Storage_Service[Session & File Storage]
+    end
+
+    subgraph External [External Services]
+        LLM[Google Gemini / OpenAI LLM]
+        DB[(Supabase PostgreSQL)]
+    end
+
+    User -->|Uploads CSV / Asks Qs| UI
+    UI <--> State
+    State <-->|HTTP Requests| API
+    
+    API --> LLM_Service
+    API --> Data_Service
+    API --> Storage_Service
+    
+    LLM_Service <-->|Prompts & Context| LLM
+    Storage_Service <-->|CRUD Sessions & Files| DB
+    Data_Service -->|Calculations| Storage_Service
+```
+
+---
+
+## Architecture Diagram (High-Level)
+
+![Architecture image](<System Architecture.png>)
+
+---
+
+## Workflow Diagram
+
+Below is the step-by-step workflow of how data moves through the AI Data Analyst platform:
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant LLM as AI Model
+
+    U->>F: Uploads Dataset(s)
+    F->>B: POST /upload
+    B->>B: Validate, Parse & Profile Data
+    B-->>F: Return File Schema & Stats
+    
+    U->>F: Asks Question ("Show sales by region")
+    F->>B: POST /chat (question + session_id)
+    B->>B: Inject Data Schema + Conversation History
+    B->>LLM: Send Structured Prompt
+    LLM-->>B: Return JSON (Answer + Python Code + Chart Specs)
+    
+    B->>B: Execute Python Code in Sandbox
+    B->>B: Map Code Results to Chart Spec
+    B-->>F: Return Answer + Visualizations
+    F-->>U: Display Rich Message (Text + Chart)
+```
+
+*(You can also refer to the included for an alternative visual representation).*
+
+![workflow image](<Work Flow.png>)
+
+---
+
+## Quick Start (Docker) - Recommended
+
+The easiest way to run the application is using Docker Compose. Ensure you have Docker installed and running.
+
+1. **Configure Environment Variables**:
+   Copy the example file and add your Supabase credentials and Gemini/OpenAI API Keys.
+   ```bash
+   cp backend/.env.example backend/.env
+   # Edit backend/.env with your credentials
+   ```
+
+2. **Run Docker Compose** from the root directory:
+   ```bash
+   docker compose up --build -d
+   ```
+
+3. **Access the Application**:
+   - **Frontend**: http://localhost (port 80)
+   - **Backend API Docs**: http://localhost:8000/docs
+
+---
+
+## Quick Start (Manual)
+
+If you prefer to run the services directly on your host machine:
 
 ### 1. Backend
 
@@ -44,12 +143,8 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # Configure environment
-copy .env.example .env
-
-# Edit .env and set your credentials:
-# 1. Set GEMINI_API_KEY=your-key-here
-# 2. Set Supabase variables (DATABASE_URL, SUPABASE_URL, SUPABASE_KEY, JWT_SECRET)
-# Note: The application uses Supabase PostgreSQL with the pgvector extension.
+cp .env.example .env
+# Edit .env and set your credentials (GEMINI_API_KEY, Supabase URL/Key, etc.)
 
 # Run server
 python main.py
@@ -66,137 +161,15 @@ cd frontend
 npm install
 
 # Configure environment
-copy .env.example .env   # uses http://localhost:8000 by default
+cp .env.example .env   # uses http://localhost:8000 by default
 
 # Run dev server
 npm run dev
 # → http://localhost:5173
 ```
 
-### 3. Run Tests
-
-```bash
-cd backend
-pytest tests/ -v
-```
-
 ---
 
-## Project Structure
+## Sample Datasets
 
-```
-dbo/
-├── backend/
-│   ├── app/
-│   │   ├── core/
-│   │   │   ├── config.py          ← pydantic-settings
-│   │   │   ├── llm_client.py      ← Gemini/OpenAI abstraction
-│   │   │   └── session_manager.py ← Thread-safe in-memory sessions
-│   │   ├── models/
-│   │   │   └── schemas.py         ← All Pydantic models
-│   │   ├── services/
-│   │   │   ├── csv_service.py     ← Upload, validate, profile
-│   │   │   ├── chat_service.py    ← LLM orchestration + code exec
-│   │   │   └── analytics_service.py ← Insights, anomalies, charts, quality
-│   │   ├── api/v1/endpoints/
-│   │   │   ├── upload.py          ← POST /upload
-│   │   │   ├── chat.py            ← POST /chat, GET+DELETE /chat/history
-│   │   │   ├── analytics.py       ← POST /analytics/*
-│   │   │   └── sessions.py        ← GET/DELETE /sessions, export
-│   │   └── utils/
-│   │       └── helpers.py         ← safe_exec, serialize_result
-│   ├── tests/
-│   │   ├── test_csv_service.py
-│   │   └── test_chat_service.py
-│   ├── main.py
-│   └── requirements.txt
-│
-└── frontend/
-    └── src/
-        ├── types/index.ts          ← TypeScript types
-        ├── store/useAppStore.ts    ← Zustand global state
-        ├── services/api.ts         ← Axios API client
-        ├── components/
-        │   ├── FileUpload.tsx      ← Drag-and-drop upload
-        │   ├── ChatInterface.tsx   ← Chat UI + message bubbles
-        │   ├── ChartRenderer.tsx   ← Recharts wrapper
-        │   ├── AnomalyPanel.tsx    ← Anomaly detection UI
-        │   ├── InsightsPanel.tsx   ← AI insights cards
-        │   ├── QualityPanel.tsx    ← Data quality score UI
-        │   └── Sidebar.tsx         ← Navigation + file list
-        └── pages/
-            └── HomePage.tsx        ← Main app layout
-```
-
----
-
-## API Reference
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `POST` | `/api/v1/upload` | Upload CSV files |
-| `POST` | `/api/v1/chat` | Ask a question |
-| `GET` | `/api/v1/chat/history/{session_id}` | Conversation history |
-| `DELETE` | `/api/v1/chat/history/{session_id}` | Clear history |
-| `POST` | `/api/v1/analytics/insights` | Generate insights |
-| `POST` | `/api/v1/analytics/anomalies` | Detect anomalies |
-| `POST` | `/api/v1/analytics/chart` | Generate chart |
-| `POST` | `/api/v1/analytics/quality` | Data quality check |
-| `GET` | `/api/v1/sessions/{session_id}` | Session details |
-| `DELETE` | `/api/v1/sessions/{session_id}` | Delete session |
-| `GET` | `/api/v1/sessions/{session_id}/export` | Export report |
-
-Full interactive docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-
-## Environment Variables
-
-### Backend (`.env`)
-
-```env
-LLM_PROVIDER=gemini           # or openai
-GEMINI_API_KEY=...            # Google AI Studio key
-OPENAI_API_KEY=...            # OpenAI key (if using OpenAI)
-MAX_FILE_SIZE_MB=50
-MAX_FILES_PER_SESSION=10
-```
-
-### Frontend (`.env`)
-
-```env
-VITE_API_URL=http://localhost:8000
-```
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Backend | FastAPI, Python 3.11+ |
-| LLM | Google Gemini 1.5 Flash (configurable) |
-| Data Processing | Pandas, NumPy |
-| Anomaly Detection | scikit-learn IsolationForest |
-| Frontend | React 18, TypeScript, Vite |
-| State | Zustand |
-| Charts | Recharts |
-| Styling | Vanilla CSS (dark glassmorphism) |
-| Logging | structlog |
-| Testing | pytest |
-
----
-
-## Example Questions
-
-```
-Which region generated the highest revenue?
-Show monthly sales trends as a line chart.
-Which products are underperforming?
-What are the top five customers by order value?
-Generate SQL for a revenue by category analysis.
-Detect anomalies in the dataset.
-What is the correlation between price and quantity sold?
-Show me a pie chart of sales by category.
-```
+You can use the datasets located in the `Sample Datasets/` directory (such as `Hb_PPG_7-17gdl.csv`) to immediately test the platform's analytical capabilities, charts, and anomaly detection. 
