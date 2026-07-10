@@ -44,7 +44,7 @@ export default function FileUpload() {
           if (results[0].status === 'fulfilled') setInsights(results[0].value);
           if (results[1].status === 'fulfilled') setAnomalies(results[1].value);
           if (results[2].status === 'fulfilled') setQuality(results[2].value);
-          if (results[3].status === 'fulfilled') setDashboard(results[3].value);
+          if (results[3].status === 'fulfilled') setDashboard(results[3].value.charts);
           
           const anyFailed = results.some(r => r.status === 'rejected');
           if (anyFailed) {

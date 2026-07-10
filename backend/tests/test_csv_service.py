@@ -5,7 +5,6 @@ import pandas as pd
 
 from app.services import csv_service
 from app.services.csv_service import (
-    build_file_record,
     build_schema_summary,
     profile_dataframe,
     validate_and_parse,
@@ -112,11 +111,3 @@ def test_schema_summary_contains_columns():
     assert "region" in summary
 
 
-# ── build_file_record ─────────────────────────────────────────
-
-def test_build_file_record():
-    df = validate_and_parse("sales.csv", SAMPLE_CSV)
-    record = build_file_record("sales.csv", df)
-    assert record.filename == "sales.csv"
-    assert record.schema_summary != ""
-    assert record.profile["rows"] == 5

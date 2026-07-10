@@ -118,6 +118,12 @@ def serialize_result(value: Any) -> Any:
     if isinstance(value, np.ndarray):
         return value.tolist()
 
+    if isinstance(value, (list, tuple)):
+        return [serialize_result(item) for item in value]
+
+    if isinstance(value, dict):
+        return {str(k): serialize_result(v) for k, v in value.items()}
+
     # Scalar numbers — guard against NaN/Inf
     if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
         return None

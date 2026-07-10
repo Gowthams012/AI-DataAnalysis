@@ -64,6 +64,7 @@ Use this exact schema:
 
 ## Rules
 - If the requested answer is just a single number, text, or a simple summary, you MUST set `chart_spec` to `null`. ONLY generate a `chart_spec` if the result contains multiple data points suitable for a chart.
+- CRITICAL: If the user explicitly asks for a chart, plot, graph, or visualization, you MUST provide a valid `chart_spec` object and MUST NOT set it to null. You must also write the corresponding python code to generate the data for the chart.
 - If no code is needed, set `code.snippet` to `""`.
 - When generating Python code, ALWAYS assign the final answer/data to a variable named `result`.
 - The `code.snippet` field MUST ALWAYS be valid Python pandas code. NEVER put SQL in `code.snippet`. If the user asks for SQL, put the SQL in the `sql` field, but you MUST STILL provide the equivalent Python pandas code in `code.snippet` so we can execute it to get the results.

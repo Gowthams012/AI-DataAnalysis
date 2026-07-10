@@ -8,7 +8,7 @@ import pandas as pd
 import structlog
 
 from app.core.config import settings
-from app.core.session_manager import FileRecord
+
 from app.models.schemas import ColumnInfo, FileProfile
 
 log = structlog.get_logger(__name__)
@@ -123,18 +123,6 @@ def build_schema_summary(df: pd.DataFrame, filename: str) -> str:
         .to_markdown(index=False)
     )
     return "\n".join(lines)
-
-
-def build_file_record(filename: str, df: pd.DataFrame) -> FileRecord:
-    """Create a FileRecord combining the DataFrame and its profile/schema."""
-    profile = profile_dataframe(df, filename)
-    schema_summary = build_schema_summary(df, filename)
-    return FileRecord(
-        filename=filename,
-        df=df,
-        schema_summary=schema_summary,
-        profile=profile.model_dump(),
-    )
 
 
 # ── Private Helpers ───────────────────────────────────────────

@@ -45,7 +45,11 @@ pip install -r requirements.txt
 
 # Configure environment
 copy .env.example .env
-# Edit .env and set GEMINI_API_KEY=your-key-here
+
+# Edit .env and set your credentials:
+# 1. Set GEMINI_API_KEY=your-key-here
+# 2. Set Supabase variables (DATABASE_URL, SUPABASE_URL, SUPABASE_KEY, JWT_SECRET)
+# Note: The application uses Supabase PostgreSQL with the pgvector extension.
 
 # Run server
 python main.py

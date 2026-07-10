@@ -44,3 +44,5 @@ redis==5.0.7
 # Database
 SQLAlchemy==2.0.51
 psycopg2-binary==2.9.12
+pgvector==0.2.5
+supabase==2.4.5

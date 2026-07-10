@@ -1,5 +1,8 @@
 import React from 'react';
-import Plot from 'react-plotly.js';
+// @ts-ignore
+import Plotly from 'plotly.js-dist-min';
+import createPlotlyComponent from 'react-plotly.js/factory';
+const Plot = createPlotlyComponent(Plotly);
 import {
   AreaChart, Area,
   BarChart, Bar,
@@ -114,7 +117,7 @@ export default function ChartRenderer({ spec }: Props) {
             {type === 'bar' ? (
               <BarChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} label={xLabel ? { value: xLabel, position: 'insideBottom', offset: -15, fill: '#9494b8', fontSize: 11 } : undefined} />
+                <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' } as any} label={xLabel ? { value: xLabel, position: 'insideBottom', offset: -15, fill: '#9494b8', fontSize: 11 } : undefined} />
                 <YAxis tick={{ fontSize: 11, fill: '#9494b8' }} label={yLabel ? { value: yLabel, angle: -90, position: 'insideLeft', offset: 0, fill: '#9494b8', fontSize: 11 } : undefined} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
@@ -125,7 +128,7 @@ export default function ChartRenderer({ spec }: Props) {
             ) : type === 'line' ? (
               <LineChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} />
+                <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' } as any} />
                 <YAxis tick={{ fontSize: 11, fill: '#9494b8' }} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
@@ -144,7 +147,7 @@ export default function ChartRenderer({ spec }: Props) {
                   ))}
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} />
+                <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' } as any} />
                 <YAxis tick={{ fontSize: 11, fill: '#9494b8' }} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
@@ -174,7 +177,7 @@ export default function ChartRenderer({ spec }: Props) {
             ) : type === 'scatter' ? (
               <ScatterChart margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                <XAxis dataKey={safeXKey} type="number" name={xLabel || safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} />
+                <XAxis dataKey={safeXKey} type="number" name={xLabel || safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' } as any} />
                 <YAxis dataKey={safeYKeys[0]?.key} type="number" name={yLabel || safeYKeys[0]?.key} tick={{ fontSize: 11, fill: '#9494b8' }} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ strokeDasharray: '3 3' }} />
                 <Scatter data={data} fill={safeYKeys[0]?.color || DEFAULT_COLORS[0]} isAnimationActive={false} />
