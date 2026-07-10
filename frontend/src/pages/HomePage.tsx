@@ -1,33 +1,13 @@
-import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { uploadFiles } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
-import { useToast } from '../hooks/useToast';
 import FileUpload from '../components/FileUpload';
 
 export default function HomePage() {
-  const { sessionId, addFiles } = useAppStore();
-  const { error: showError, success: showSuccess } = useToast();
-
-  const onDrop = useCallback(
-    async (accepted: File[]) => {
-      if (!accepted.length || !sessionId) return;
-      try {
-        const res = await uploadFiles(accepted, sessionId);
-        addFiles(res.files);
-        showSuccess(`${res.files.length} file(s) added successfully.`, 'Upload Complete');
-      } catch (err) {
-        showError(err, 'Upload Failed');
-      }
-    },
-    [sessionId, addFiles, showError, showSuccess]
-  );
+  const { sessionId } = useAppStore();
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { 'text/csv': ['.csv'] },
-    multiple: true,
     noClick: true,
+    noKeyboard: true,
   });
 
   return (
@@ -38,7 +18,7 @@ export default function HomePage() {
         <span className="topbar-title">Welcome to DataAnalytics</span>
       </div>
 
-      <div style={{ flex: 1, overflow: 'hidden', padding: 20 }}>
+      <div style={{ flex: 1, overflow: 'hidden', padding: 20, position: 'relative' }}>
         {isDragActive && sessionId && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 999,
@@ -53,6 +33,7 @@ export default function HomePage() {
             </div>
           </div>
         )}
+        
         <FileUpload />
       </div>
     </div>

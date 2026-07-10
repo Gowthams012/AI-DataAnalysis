@@ -41,7 +41,7 @@ export interface YKey {
 }
 
 export interface ChartSpec {
-  type: 'bar' | 'line' | 'pie' | 'scatter' | 'area';
+  type: 'bar' | 'line' | 'pie' | 'scatter' | 'area' | 'bubble' | 'map' | 'boxplot';
   title: string;
   data: Record<string, unknown>[];
   xKey: string;
@@ -50,6 +50,8 @@ export interface ChartSpec {
   yLabel?: string;
   nameKey?: string;
   valueKey?: string;
+  zKey?: string;
+  locationMode?: string;
 }
 
 export interface ChatResponse {

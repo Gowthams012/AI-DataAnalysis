@@ -47,13 +47,15 @@ Use this exact schema:
     "snippet": "<code to execute, assign final answer to variable named 'result'>"
   },
   "chart_spec": {
-    "type": "<bar|line|pie|scatter|area>",
+    "type": "<bar|line|pie|scatter|area|bubble|map|boxplot>",
     "title": "<descriptive chart title>",
     "data": "USE_CODE_RESULT",
-    "xKey": "<column for x-axis>",
+    "xKey": "<column for x-axis (or location name for maps, or category for boxplots)>",
     "yKeys": [{"key": "<col>", "color": "#6366f1", "name": "<label>"}],
     "xLabel": "<x-axis label>",
-    "yLabel": "<y-axis label>"
+    "yLabel": "<y-axis label>",
+    "zKey": "<for bubble: column with size values>",
+    "locationMode": "<for map: 'country names', 'ISO-3', or 'USA-states'>"
   },
   "sql": "<SQL equivalent query, or empty string>",
   "follow_up_questions": ["<question 1>", "<question 2>", "<question 3>"]
@@ -180,6 +182,8 @@ async def chat(session_id: str, message: str) -> ChatResponse:
             yLabel=chart_data.get("yLabel"),
             nameKey=chart_data.get("nameKey"),
             valueKey=chart_data.get("valueKey"),
+            zKey=chart_data.get("zKey"),
+            locationMode=chart_data.get("locationMode"),
         )
 
     # 8. Persist conversation

@@ -38,13 +38,15 @@ export default function Sidebar() {
   const { user, signOut } = useAuth();
   const reportRef = useRef<HTMLDivElement>(null);
   const [sessions, setSessions] = useState<any[]>([]);
+  const [totalSessions, setTotalSessions] = useState(0);
 
   useEffect(() => {
-    if (user) {
-      getSessions()
-        .then(data => setSessions(data.slice(0, 10))) // show top 10
-        .catch(console.error);
-    }
+    getSessions()
+      .then(data => {
+        setTotalSessions(data.length);
+        setSessions(data.slice(0, 10)); // show top 10
+      })
+      .catch(console.error);
   }, [user, sessionId]);
 
   const { open, getInputProps } = useDropzone({
@@ -209,7 +211,7 @@ export default function Sidebar() {
                   title={s.session_id}
                 >
                   <div style={{ fontWeight: s.session_id === sessionId ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    Session {sessions.length - index}
+                    Session {totalSessions - index}
                   </div>
                   <div style={{ fontSize: 9, opacity: 0.7, marginTop: 2 }}>
                     {new Date(s.last_active).toLocaleString()}

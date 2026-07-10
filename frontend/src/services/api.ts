@@ -109,11 +109,13 @@ export async function checkQuality(
 
 export async function generateDashboard(
   sessionId: string,
-  filename?: string
+  filename?: string,
+  prompt?: string
 ): Promise<DashboardResponse> {
   const { data } = await api.post<DashboardResponse>('/analytics/dashboard', {
     session_id: sessionId,
     filename,
+    prompt,
   });
   return data;
 }

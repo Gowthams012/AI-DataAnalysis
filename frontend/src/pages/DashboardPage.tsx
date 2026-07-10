@@ -11,8 +11,9 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<string>('');
+  const [prompt, setPrompt] = useState<string>('');
 
-  const fetchDashboard = async (fileToUse?: string) => {
+  const fetchDashboard = async (fileToUse?: string, customPrompt?: string) => {
     if (!sessionId) return;
     const file = fileToUse || selectedFile;
     if (uploadedFiles.length > 1 && !file) {
@@ -23,7 +24,7 @@ export default function DashboardPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await generateDashboard(sessionId, file);
+      const res = await generateDashboard(sessionId, file, customPrompt ?? prompt);
       setCharts(res.charts);
       useAppStore.getState().setDashboard(res.charts);
     } catch (err) {
@@ -57,7 +58,17 @@ export default function DashboardPage() {
             AI-generated visualizations based on your dataset patterns.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, maxWidth: 600, justifyContent: 'flex-end' }}>
+          <input 
+            type="text" 
+            className="chat-input" 
+            placeholder="Prompt a custom dashboard (e.g. 'Show sales by region')..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && fetchDashboard()}
+            style={{ flex: 1, minHeight: 'unset', height: 36, fontSize: 13, padding: '0 12px' }}
+            disabled={isLoading || !sessionId}
+          />
           {uploadedFiles.length > 1 && (
             <select 
               value={selectedFile} 
@@ -74,6 +85,7 @@ export default function DashboardPage() {
             className="btn btn-primary" 
             onClick={() => fetchDashboard()} 
             disabled={isLoading || !sessionId || (uploadedFiles.length > 1 && !selectedFile)}
+            style={{ height: 36, whiteSpace: 'nowrap' }}
           >
             {isLoading ? 'Generating...' : charts.length > 0 ? 'Regenerate' : 'Generate'}
           </button>
@@ -96,7 +108,7 @@ export default function DashboardPage() {
           <div className="empty-state">
             <div className="empty-state-title" style={{ color: '#ef4444' }}>Error Generating Dashboard</div>
             <div className="empty-state-text">{error}</div>
-            <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={fetchDashboard}>Try Again</button>
+            <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => fetchDashboard()}>Try Again</button>
           </div>
         ) : charts.length === 0 ? (
            <div className="empty-state">

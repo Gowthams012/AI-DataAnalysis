@@ -781,24 +781,27 @@ body {
 /* ── Insight Cards ─────────────────────────────────────────────── */
 .insight-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-  padding: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 24px;
+  align-items: start; /* Prevents cards in the same row from stretching to match the tallest one */
 }
 
 .insight-card {
-  padding: 16px;
-  border-radius: var(--r-md);
+  padding: 20px;
+  border-radius: var(--r-lg);
   background: var(--bg-card);
   border: 1px solid var(--border);
-  transition: all var(--t-fast);
+  transition: all var(--t-normal);
+  display: flex;
+  flex-direction: column;
 }
 
 .insight-card:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-accent);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card);
+  background: var(--bg-surface);
+  border-color: rgba(0, 102, 204, 0.3);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 16px 40px rgba(0, 102, 204, 0.1);
 }
 
 .insight-card-header {
@@ -810,10 +813,10 @@ body {
 }
 
 .insight-card-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .severity-badge {
@@ -832,18 +835,19 @@ body {
 
 .category-badge {
   display: inline-block;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 99px;
   font-size: 10px;
   font-weight: 600;
   background: rgba(99,102,241,0.12);
   color: var(--accent-1);
   border: 1px solid var(--border-accent);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  align-self: flex-start;
 }
 
 .insight-card-desc {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.6;
 }
@@ -1302,3 +1306,25 @@ body {
   text-decoration: underline;
 }
 
+
+ / *    % %  M a r k d o w n   B o d y   ( F o r   P a n e l s )    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %  * / 
+ . m a r k d o w n - b o d y   h 1 ,   . m a r k d o w n - b o d y   h 2 ,   . m a r k d o w n - b o d y   h 3   { 
+     f o n t - s i z e :   1 4 p x ; 
+     f o n t - w e i g h t :   6 0 0 ; 
+     m a r g i n - b o t t o m :   6 p x ; 
+     c o l o r :   v a r ( - - t e x t - p r i m a r y ) ; 
+ } 
+ . m a r k d o w n - b o d y   p   {   m a r g i n - b o t t o m :   8 p x ;   } 
+ . m a r k d o w n - b o d y   p : l a s t - c h i l d   {   m a r g i n - b o t t o m :   0 ;   } 
+ . m a r k d o w n - b o d y   u l ,   . m a r k d o w n - b o d y   o l   {   p a d d i n g - l e f t :   2 0 p x ;   m a r g i n - b o t t o m :   8 p x ;   } 
+ . m a r k d o w n - b o d y   l i   {   m a r g i n - b o t t o m :   4 p x ;   } 
+ . m a r k d o w n - b o d y   s t r o n g   {   c o l o r :   v a r ( - - t e x t - p r i m a r y ) ;   f o n t - w e i g h t :   6 0 0 ;   } 
+ . m a r k d o w n - b o d y   c o d e   { 
+     f o n t - f a m i l y :   ' J e t B r a i n s   M o n o ' ,   m o n o s p a c e ; 
+     f o n t - s i z e :   1 1 p x ; 
+     b a c k g r o u n d :   r g b a ( 2 5 5 , 2 5 5 , 2 5 5 , 0 . 4 ) ; 
+     p a d d i n g :   1 p x   5 p x ; 
+     b o r d e r - r a d i u s :   4 p x ; 
+ } 
+  
+ 

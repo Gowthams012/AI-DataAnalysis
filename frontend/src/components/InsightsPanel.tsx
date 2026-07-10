@@ -2,6 +2,8 @@ import { getInsights } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import type { InsightItem } from '../types';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const CATEGORY_ICONS: Record<string, string> = {
   trend: '',
@@ -87,7 +89,9 @@ function InsightCard({ item }: { item: InsightItem }) {
         <span className={`severity-badge severity-${item.severity}`}>{item.severity}</span>
       </div>
       <span className="category-badge">{item.category}</span>
-      <div className="insight-card-desc">{item.description}</div>
+      <div className="insight-card-desc markdown-body" style={{ marginTop: 8 }}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.description}</ReactMarkdown>
+      </div>
     </div>
   );
 }

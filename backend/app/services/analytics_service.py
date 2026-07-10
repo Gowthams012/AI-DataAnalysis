@@ -49,7 +49,7 @@ Respond ONLY with valid JSON matching this schema:
   "insights": [
     {{
       "title": "<short insight title>",
-      "description": "<detailed explanation with specific numbers from the data>",
+      "description": "<detailed markdown list with bullet points explaining the insight, reasons, and specific numbers from the data>",
       "severity": "<high|medium|low>",
       "category": "<trend|outlier|pattern|correlation|summary>"
     }}
@@ -58,6 +58,7 @@ Respond ONLY with valid JSON matching this schema:
 }}
 
 Generate between 5 and 8 insights. Focus on actionable findings.
+Format `description` as a markdown list of bullet points to make it easy and wonderful to read.
 """).strip()
 
     raw = await llm_client.generate(prompt)
@@ -141,7 +142,7 @@ Dataset numeric statistics (for reference):
 Flagged anomalous rows (format: Row <index>: <values>):
 {anomaly_rows_text}
 
-For EACH flagged row above, explain specifically WHY it is anomalous by comparing its values to the typical ranges.
+For EACH flagged row above, explain specifically WHY it is anomalous and what the likely CAUSE is.
 Provide a brief, easy-to-understand reason formatted with bullet points.
 
 Respond ONLY with valid JSON matching this exact structure:
@@ -149,7 +150,7 @@ Respond ONLY with valid JSON matching this exact structure:
   "explanations": [
     {{
       "row_index": 123, 
-      "explanation": "- Value X is significantly higher than the median.\n- Value Z is unusually low."
+      "explanation": "**Reason:** Value X is significantly higher than the median.\\n**Likely Cause:** Data entry error or abnormal event."
     }}
   ],
   "summary": "<overall summary of anomaly patterns found>"
@@ -224,15 +225,17 @@ The dataframe `df` is ALREADY loaded in memory. DO NOT use pd.read_csv() or try 
 
 Generate a chart specification. Respond ONLY with valid JSON:
 {{
-  "type": "<bar|line|pie|scatter|area>",
+  "type": "<bar|line|pie|scatter|area|bubble|map|boxplot>",
   "title": "<descriptive title>",
   "code": "<pandas code that assigns a DataFrame or Series to 'result'>",
-  "xKey": "<column for x-axis (leave empty for pie)>",
+  "xKey": "<column for x-axis (or location name for maps, or category for boxplots)>",
   "yKeys": [{{"key": "<col>", "color": "{_CHART_COLORS[0]}", "name": "<label>"}}],
   "xLabel": "<x-axis label>",
   "yLabel": "<y-axis label>",
   "nameKey": "<for pie: column with category names>",
-  "valueKey": "<for pie: column with values>"
+  "valueKey": "<for pie: column with values>",
+  "zKey": "<for bubble: column with size values>",
+  "locationMode": "<for map: 'country names', 'ISO-3', or 'USA-states'>"
 }}
 """).strip()
 
@@ -269,11 +272,13 @@ Generate a chart specification. Respond ONLY with valid JSON:
         yLabel=parsed.get("yLabel"),
         nameKey=parsed.get("nameKey"),
         valueKey=parsed.get("valueKey"),
+        zKey=parsed.get("zKey"),
+        locationMode=parsed.get("locationMode"),
     )
 
 
-async def generate_dashboard(session: Session, filename: Optional[str] = None) -> List[ChartSpec]:
-    """Generate a full automated dashboard (5-6 charts) based on dataset patterns."""
+async def generate_dashboard(session: Session, filename: Optional[str] = None, prompt_query: Optional[str] = None) -> List[ChartSpec]:
+    """Generate a full automated dashboard (5-6 charts) based on dataset patterns or user prompt."""
     from app.services.chat_service import _build_df_namespace
     from app.utils.helpers import result_to_chart_data, safe_exec, serialize_result
 
@@ -281,9 +286,13 @@ async def generate_dashboard(session: Session, filename: Optional[str] = None) -
     df_vars = _build_df_namespace(session, fname)
     schema_summary = session.files[fname].schema_summary
     stats_summary = _build_stats_summary(df, fname)
+    
+    base_instruction = "Generate an insightful dashboard containing 5 to 6 different visualizations based on the dataset patterns."
+    if prompt_query:
+        base_instruction = f"The user has explicitly requested the following dashboard layout/focus: '{prompt_query}'.\nGenerate 5 to 6 visualizations that directly address this request, prioritizing the user's specific metrics or groupings."
 
     prompt = textwrap.dedent(f"""
-You are an expert data analyst. Generate an insightful dashboard containing 5 to 6 different visualizations based on the dataset patterns.
+You are an expert data analyst. {base_instruction}
 
 Dataset schema:
 {schema_summary}
@@ -296,20 +305,22 @@ Available DataFrame variable: df (and {", ".join(df_vars.keys())})
 IMPORTANT: You MUST write python code that aggregates, filters, or transforms `df` to produce the visualization data for `result`. DO NOT generate mock, synthetic, or hardcoded data under any circumstances.
 The dataframe `df` is ALREADY loaded in memory. DO NOT use pd.read_csv() or try to read files from disk. Just use the `df` variable directly.
 
-Generate 5-6 diverse chart specifications (e.g. some bars, lines, pies, scatters) that tell a story about this data.
+Generate 5-6 diverse chart specifications (e.g. bars, lines, pies, scatters, maps, boxplots) that tell a story about this data.
 Respond ONLY with valid JSON matching this exact structure:
 {{
   "charts": [
     {{
-      "type": "<bar|line|pie|scatter|area>",
+      "type": "<bar|line|pie|scatter|area|bubble|map|boxplot>",
       "title": "<descriptive title>",
       "code": "<pandas code that assigns a DataFrame or Series to 'result'>",
-      "xKey": "<column for x-axis (leave empty for pie)>",
+      "xKey": "<column for x-axis (or location name for maps, or category for boxplots)>",
       "yKeys": [{{"key": "<col>", "color": "{_CHART_COLORS[0]}", "name": "<label>"}}],
       "xLabel": "<x-axis label>",
       "yLabel": "<y-axis label>",
       "nameKey": "<for pie: column with category names>",
-      "valueKey": "<for pie: column with values>"
+      "valueKey": "<for pie: column with values>",
+      "zKey": "<for bubble: column with size values>",
+      "locationMode": "<for map: 'country names', 'ISO-3', or 'USA-states'>"
     }}
   ]
 }}
@@ -353,6 +364,8 @@ Respond ONLY with valid JSON matching this exact structure:
                     yLabel=c.get("yLabel"),
                     nameKey=c.get("nameKey"),
                     valueKey=c.get("valueKey"),
+                    zKey=c.get("zKey"),
+                    locationMode=c.get("locationMode"),
                 )
             )
 
@@ -502,8 +515,10 @@ Data quality score: {score}/100
 Issues detected:
 {issues_text}
 
-Write a 2-3 sentence executive summary of the data quality, prioritizing the most critical issues.
-Respond with just the summary text (no JSON needed).
+Write an executive summary of the data quality formatted as markdown bullet points.
+List out the key metrics (missing values, outliers, duplicates, etc.) and finally show the overall result of the data quality.
+Make it concise and easy to read.
+Respond with just the markdown text (no JSON needed).
 """).strip()
 
     summary = await llm_client.generate(summary_prompt)

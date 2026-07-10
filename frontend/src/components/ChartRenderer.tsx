@@ -1,3 +1,5 @@
+import React from 'react';
+import Plot from 'react-plotly.js';
 import {
   AreaChart, Area,
   BarChart, Bar,
@@ -52,84 +54,140 @@ export default function ChartRenderer({ spec }: Props) {
   return (
     <div className="chart-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 350 }}>
       <div className="chart-title" style={{ flexShrink: 0, fontWeight: 600, marginBottom: 16 }}>{title}</div>
-      <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
-      <ResponsiveContainer width="100%" height="100%">
-        {type === 'bar' ? (
-          <BarChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} label={xLabel ? { value: xLabel, position: 'insideBottom', offset: -15, fill: '#9494b8', fontSize: 11 } : undefined} />
-            <YAxis tick={{ fontSize: 11, fill: '#9494b8' }} label={yLabel ? { value: yLabel, angle: -90, position: 'insideLeft', offset: 0, fill: '#9494b8', fontSize: 11 } : undefined} />
-            <Tooltip contentStyle={tooltipStyle} />
-            <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
-            {safeYKeys.map((yk, i) => (
-              <Bar key={yk.key} dataKey={yk.key} name={yk.name || yk.key} fill={yk.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]} radius={[4, 4, 0, 0]} isAnimationActive={false} />
-            ))}
-          </BarChart>
-        ) : type === 'line' ? (
-          <LineChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} />
-            <YAxis tick={{ fontSize: 11, fill: '#9494b8' }} />
-            <Tooltip contentStyle={tooltipStyle} />
-            <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
-            {safeYKeys.map((yk, i) => (
-              <Line key={yk.key} type="monotone" dataKey={yk.key} name={yk.name || yk.key} stroke={yk.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} isAnimationActive={false} />
-            ))}
-          </LineChart>
-        ) : type === 'area' ? (
-          <AreaChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
-            <defs>
-              {safeYKeys.map((yk, i) => (
-                <linearGradient key={yk.key} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={yk.color || DEFAULT_COLORS[i]} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={yk.color || DEFAULT_COLORS[i]} stopOpacity={0} />
-                </linearGradient>
-              ))}
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} />
-            <YAxis tick={{ fontSize: 11, fill: '#9494b8' }} />
-            <Tooltip contentStyle={tooltipStyle} />
-            <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
-            {safeYKeys.map((yk, i) => (
-              <Area key={yk.key} type="monotone" dataKey={yk.key} name={yk.name || yk.key} stroke={yk.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]} fill={`url(#grad-${i})`} strokeWidth={2} isAnimationActive={false} />
-            ))}
-          </AreaChart>
-        ) : type === 'pie' ? (
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey={valueKey && actualKeys.includes(valueKey) ? valueKey : (safeYKeys[0]?.key || 'value')}
-              nameKey={nameKey && actualKeys.includes(nameKey) ? nameKey : (safeXKey || 'name')}
-              cx="50%" cy="50%"
-              outerRadius={110}
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-              labelLine={{ stroke: 'rgba(0,0,0,0.1)' }}
-              isAnimationActive={false}
-            >
-              {data.map((_, i) => (
-                <Cell key={i} fill={DEFAULT_COLORS[i % DEFAULT_COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip contentStyle={tooltipStyle} />
-            <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
-          </PieChart>
-        ) : type === 'scatter' ? (
-          <ScatterChart margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-            <XAxis dataKey={safeXKey} type="number" name={xLabel || safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} />
-            <YAxis dataKey={safeYKeys[0]?.key} type="number" name={yLabel || safeYKeys[0]?.key} tick={{ fontSize: 11, fill: '#9494b8' }} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ strokeDasharray: '3 3' }} />
-            <Scatter data={data} fill={safeYKeys[0]?.color || DEFAULT_COLORS[0]} isAnimationActive={false} />
-          </ScatterChart>
+      <div style={{ flex: 1, minHeight: 0, width: '100%', position: 'relative' }}>
+        {['bubble', 'map', 'boxplot'].includes(type) ? (
+          <Plot
+            data={
+              type === 'bubble'
+                ? [{
+                    x: data.map(d => d[safeXKey]),
+                    y: data.map(d => d[safeYKeys[0]?.key]),
+                    mode: 'markers',
+                    marker: {
+                      size: spec.zKey ? data.map(d => d[spec.zKey!]) : 10,
+                      sizemode: 'area',
+                      sizeref: spec.zKey ? (2.0 * Math.max(...data.map(d => Number(d[spec.zKey!]) || 0)) / (40 ** 2)) : 1,
+                      sizemin: 4,
+                      color: safeYKeys[0]?.color || DEFAULT_COLORS[0],
+                    },
+                    type: 'scatter'
+                  }]
+                : type === 'boxplot'
+                ? [{
+                    y: data.map(d => d[safeYKeys[0]?.key]),
+                    x: data.map(d => d[safeXKey]),
+                    type: 'box',
+                    marker: { color: safeYKeys[0]?.color || DEFAULT_COLORS[0] },
+                  }]
+                : type === 'map'
+                ? [{
+                    type: 'choropleth',
+                    locationmode: (spec.locationMode as any) || 'country names',
+                    locations: data.map(d => d[safeXKey]),
+                    z: data.map(d => d[safeYKeys[0]?.key]),
+                    colorscale: 'Viridis',
+                    autocolorscale: false,
+                  }]
+                : []
+            }
+            layout={{
+              autosize: true,
+              margin: { t: 10, b: 40, l: 40, r: 10 },
+              paper_bgcolor: 'transparent',
+              plot_bgcolor: 'transparent',
+              font: { color: '#9494b8', size: 11 },
+              xaxis: { title: xLabel || safeXKey, tickangle: -35 },
+              yaxis: { title: yLabel || safeYKeys[0]?.key },
+              geo: type === 'map' ? {
+                bgcolor: 'transparent',
+                showframe: false,
+                showcoastlines: true,
+                projection: { type: 'equirectangular' }
+              } : undefined
+            }}
+            useResizeHandler={true}
+            style={{ width: '100%', height: '100%' }}
+            config={{ displayModeBar: false }}
+          />
         ) : (
-          <BarChart data={data}>
-            <XAxis dataKey={safeXKey} />
-            <YAxis />
-            <Bar dataKey={safeYKeys[0]?.key || 'value'} fill={DEFAULT_COLORS[0]} isAnimationActive={false} />
-          </BarChart>
+          <ResponsiveContainer width="100%" height="100%">
+            {type === 'bar' ? (
+              <BarChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} label={xLabel ? { value: xLabel, position: 'insideBottom', offset: -15, fill: '#9494b8', fontSize: 11 } : undefined} />
+                <YAxis tick={{ fontSize: 11, fill: '#9494b8' }} label={yLabel ? { value: yLabel, angle: -90, position: 'insideLeft', offset: 0, fill: '#9494b8', fontSize: 11 } : undefined} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
+                {safeYKeys.map((yk, i) => (
+                  <Bar key={yk.key} dataKey={yk.key} name={yk.name || yk.key} fill={yk.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                ))}
+              </BarChart>
+            ) : type === 'line' ? (
+              <LineChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#9494b8' }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
+                {safeYKeys.map((yk, i) => (
+                  <Line key={yk.key} type="monotone" dataKey={yk.key} name={yk.name || yk.key} stroke={yk.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} isAnimationActive={false} />
+                ))}
+              </LineChart>
+            ) : type === 'area' ? (
+              <AreaChart data={data} margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
+                <defs>
+                  {safeYKeys.map((yk, i) => (
+                    <linearGradient key={yk.key} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={yk.color || DEFAULT_COLORS[i]} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={yk.color || DEFAULT_COLORS[i]} stopOpacity={0} />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey={safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#9494b8' }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
+                {safeYKeys.map((yk, i) => (
+                  <Area key={yk.key} type="monotone" dataKey={yk.key} name={yk.name || yk.key} stroke={yk.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]} fill={`url(#grad-${i})`} strokeWidth={2} isAnimationActive={false} />
+                ))}
+              </AreaChart>
+            ) : type === 'pie' ? (
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey={valueKey && actualKeys.includes(valueKey) ? valueKey : (safeYKeys[0]?.key || 'value')}
+                  nameKey={nameKey && actualKeys.includes(nameKey) ? nameKey : (safeXKey || 'name')}
+                  cx="50%" cy="50%"
+                  outerRadius={110}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                  labelLine={{ stroke: 'rgba(0,0,0,0.1)' }}
+                  isAnimationActive={false}
+                >
+                  {data.map((_, i) => (
+                    <Cell key={i} fill={DEFAULT_COLORS[i % DEFAULT_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, color: '#9494b8', paddingBottom: 16 }} />
+              </PieChart>
+            ) : type === 'scatter' ? (
+              <ScatterChart margin={{ top: 10, right: 30, left: 10, bottom: 70 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <XAxis dataKey={safeXKey} type="number" name={xLabel || safeXKey} height={60} tick={{ fontSize: 11, fill: '#9494b8', angle: -35, textAnchor: 'end' }} />
+                <YAxis dataKey={safeYKeys[0]?.key} type="number" name={yLabel || safeYKeys[0]?.key} tick={{ fontSize: 11, fill: '#9494b8' }} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ strokeDasharray: '3 3' }} />
+                <Scatter data={data} fill={safeYKeys[0]?.color || DEFAULT_COLORS[0]} isAnimationActive={false} />
+              </ScatterChart>
+            ) : (
+              <BarChart data={data}>
+                <XAxis dataKey={safeXKey} />
+                <YAxis />
+                <Bar dataKey={safeYKeys[0]?.key || 'value'} fill={DEFAULT_COLORS[0]} isAnimationActive={false} />
+              </BarChart>
+            )}
+          </ResponsiveContainer>
         )}
-      </ResponsiveContainer>
       </div>
     </div>
   );

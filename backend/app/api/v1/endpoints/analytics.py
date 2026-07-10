@@ -96,7 +96,7 @@ async def generate_dashboard(request: AnalyticsRequest, user: User = Depends(get
         raise HTTPException(status_code=400, detail="No files in session.")
 
     try:
-        charts = await analytics_service.generate_dashboard(session, request.filename)
+        charts = await analytics_service.generate_dashboard(session, request.filename, request.prompt)
         return DashboardResponse(charts=charts)
     except Exception as exc:
         _handle_exc(exc, "dashboard", request.session_id)

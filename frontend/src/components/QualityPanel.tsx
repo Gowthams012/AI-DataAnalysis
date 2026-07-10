@@ -2,6 +2,8 @@ import { checkQuality } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import type { QualityIssue } from '../types';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const SEVERITY_COLOR: Record<string, string> = {
   high: 'var(--accent-err)',
@@ -96,8 +98,8 @@ export default function QualityPanel() {
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
                 Quality Score
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                {quality.summary}
+              <div className="markdown-body" style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{quality.summary}</ReactMarkdown>
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
                 {quality.rows_analyzed.toLocaleString()} rows analyzed · {quality.issues.length} issues found

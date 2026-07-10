@@ -53,7 +53,7 @@ class YKey(BaseModel):
 
 
 class ChartSpec(BaseModel):
-    type: str                         # bar | line | pie | scatter | area
+    type: str                         # bar | line | pie | scatter | area | bubble | map | boxplot
     title: str
     data: List[Dict[str, Any]] = []
     xKey: str = ""
@@ -62,6 +62,8 @@ class ChartSpec(BaseModel):
     yLabel: Optional[str] = None
     nameKey: Optional[str] = None     # for pie charts
     valueKey: Optional[str] = None    # for pie charts
+    zKey: Optional[str] = None        # for bubble charts (size)
+    locationMode: Optional[str] = None # for map charts (e.g. 'country names', 'ISO-3')
 
 
 class ChatResponse(BaseModel):
@@ -141,6 +143,7 @@ class ChartRequest(BaseModel):
 class AnalyticsRequest(BaseModel):
     session_id: str
     filename: Optional[str] = None
+    prompt: Optional[str] = None
 
 
 class DashboardResponse(BaseModel):
